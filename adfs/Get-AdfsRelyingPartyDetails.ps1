@@ -2,8 +2,10 @@ Function Get-AdfsRelyingPartyDetails {
     [CmdletBinding()]
     Param
     (
-        [Parameter(Position=0, Mandatory = $False, HelpMessage="Relying Party name(s) to include", ValueFromPipeline = $true)] [ALIAS("Name")] [STRING[]] $RelyingPartyName,
-        [Parameter(Position=1, Mandatory = $False, HelpMessage="ADFS server name", ValueFromPipeline = $true)] $ADFSServer = $($env:COMPUTERNAME)
+        [Parameter(Position=0, Mandatory = $False, HelpMessage="Relying Party name(s) to include", ValueFromPipeline = $true)] 
+                [ALIAS("Name")] [STRING[]] $RelyingPartyName,
+        [Parameter(Position=1, Mandatory = $False, HelpMessage="ADFS server name", ValueFromPipeline = $true)] 
+                [ALIAS("Server")] $ADFSServer = $($env:COMPUTERNAME)
     )
      
     BEGIN {
@@ -12,9 +14,10 @@ Function Get-AdfsRelyingPartyDetails {
  
         ## Commonly referenced relying party properties
         ## Note: this variable is not used in this script version, but included for future reference
-        $collectProps = 'Name', 'WSFedEndpoint', 'Identifier', 'MetadataUrl', 'IssuanceTransformRules', 'ConflictWithPublishedPolicy', 'Enabled', 'MonitoringEnabled',
-                'AutoUpdateEnabled', 'LastMonitoredTime', 'LastUpdateTime', 'NotBeforeSkew', 'EncryptClaims', 'ProtocolProfile', 'AllowedClientTypes',
-                'TokenLifetime', 'IssueOAuthRefreshTokensTo', 'RequestSigningCertificate', 'EncryptionCertificate', 'Notes'
+        $collectProps = 'Name', 'WSFedEndpoint', 'Identifier', 'MetadataUrl', 'IssuanceTransformRules', 'ConflictWithPublishedPolicy', 
+            'Enabled', 'MonitoringEnabled', 'AutoUpdateEnabled', 'LastMonitoredTime', 'LastUpdateTime', 'NotBeforeSkew', 
+            'EncryptClaims', 'ProtocolProfile', 'AllowedClientTypes', 'TokenLifetime', 'IssueOAuthRefreshTokensTo', 
+            'RequestSigningCertificate', 'EncryptionCertificate', 'Notes'
          
         $certProps = "Subject","Issuer","NotBefore","NotAfter","Thumbprint","Handle","SerialNumber","Version"
  
@@ -22,7 +25,9 @@ Function Get-AdfsRelyingPartyDetails {
      
     PROCESS {
         # Get all relying party details from ADFS
-        $allRelyingParties = Invoke-Command -ErrorAction Stop -ComputerName $ADFSServer -scriptblock {Get-ADFSRelyingPartyTrust | Select-Object -Property * | Sort Name}
+        $allRelyingParties = Invoke-Command -ErrorAction Stop -ComputerName $ADFSServer -ScriptBlock {
+                Get-ADFSRelyingPartyTrust | Select-Object -Property * | Sort Name
+        }
  
         # If 'RelyingPartyName' parameter was passed, create RegEx filter and apply filter to 'Name' property
         If ($RelyingPartyName) {
