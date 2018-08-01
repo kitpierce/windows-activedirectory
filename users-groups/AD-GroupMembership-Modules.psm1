@@ -19,7 +19,6 @@ function Export-DomainGroupHashtable {
         ForEach ($group in $AllAdGroups) {
             $i++
             Write-Verbose "Getting Details For '$tempDomain' Group $i/$($allAdGroups.Count): '$($group.Name)'"
-            #$GroupDN = $group.DistinguishedName
             [ARRAY]$Members = $group.Member | Sort
             $tempGroupHash.Add($group.DistinguishedName,$Members)
             $tempGroupNameHash.Add($group.DistinguishedName,$group.Name)
@@ -54,7 +53,6 @@ function Export-DomainUserHashtable {
         ForEach ($user in $allAdUsers) {
             $i++
             Write-Verbose "Getting Details For '$tempDomain' User $i/$($allAdUsers.Count): '$($user.Name)'"
-            #$UserDN = $user.DistinguishedName
             [ARRAY]$MemberOf = $user.MemberOf | Sort
             $tempUserHash.Add($user.DistinguishedName,$MemberOf)
             $tempUserNameHash.Add($user.DistinguishedName,$user.Name)
@@ -127,9 +125,13 @@ function Get-NestedGroupMembership {
 
 function Get-ADRecursiveGroupMembership {
     param (
-        [Parameter(Position=0,Mandatory=$true,ValueFromPipeline,ValueFromPipelineByPropertyName)] [Alias("ADObject")]$Identity,
-        [Parameter(Position=1,Mandatory=$false)][ValidateSet("Summary","Objects","Both")][Alias("Return")][String]$ReturnType = "Summary",
-        [Parameter(Position=2,Mandatory=$false)][ValidateSet("Troubleshoot","Verbose","Silent")][Alias("Feedback")][String]$FeedbackLevel = "Silent",
+        [Parameter(Position=0,Mandatory=$true,ValueFromPipeline,ValueFromPipelineByPropertyName)]
+            [Alias("ADObject")]$Identity,
+        [Parameter(Position=1,Mandatory=$false)]
+            [ValidateSet("Summary","Objects","Both")]
+            [Alias("Return")][String]$ReturnType = "Summary",
+        [Parameter(Position=2,Mandatory=$false)][ValidateSet("Troubleshoot","Verbose","Silent")]
+            [Alias("Feedback")][String]$FeedbackLevel = "Silent",
         [Switch]$ShowDepth
     )
 
@@ -178,12 +180,9 @@ function Get-ADRecursiveGroupMembership {
     ForEach ($group in $DirectMembership) {
         $groupCount++
         $groupName = $($group | Out-String).Trim()
-        #Write-Verbose "$dbgCall Collecting Details For Direct-Membership Group $groupCount/$($directmembership.Count): '$Group'"
-        #[ARRAY]$GroupList += Get-NestedGroupMembership $($group | Out-String).Trim()
         Write-Verbose "$dbgCall Collecting Details For Direct-Membership Group $groupCount/$($directmembership.Count): '$GroupName'"
         $tempGroupList = Get-NestedGroupMembership $GroupName
         $tempGroupList | % {If ($GroupList -notcontains $_) {[ARRAY]$GroupList += $_}}
-        #[ARRAY]$GroupList += Get-NestedGroupMembership $GroupName
     }
 
     If ($ReturnType -Match "Summary|Both") {
