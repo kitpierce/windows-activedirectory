@@ -197,3 +197,72 @@ function Get-ADRecursiveGroupMembership {
 #endregion
 
 #region Group Nesting Reporting/Display Functions
+function Show-GroupNestingSummary {
+    param (
+        [Parameter(Position=0,ValueFromPipeline=$true)] [PSObject[]] $Groups,
+        [Switch]$ShowDepth
+    )
+
+    BEGIN {
+        $dbgCall = "[$($MyInvocation.MyCommand.CommandType): $($MyInvocation.MyCommand.Name)]"
+        If (!(Get-Variable GroupNameHash)) {Export-DomainGroupHashtable -CreateType Names -VariableScope Global}
+    }
+    PROCESS {
+        [ARRAY]$baseGroups = $groups | Where-Object {$_.Depth -eq 0} | Sort-Object DistinguishedName
+        ForEach ($group in $baseGroups) { Write-GroupName -Name $group -Collection $groups -ShowDepth:$ShowDepth}
+    }
+}
+
+function Write-GroupName {
+    param (
+        [Parameter(Position=0,ValueFromPipeline=$true)] [ALIAS("Name")][PSObject[]]$Group,
+        [Parameter(Position=1,ValueFromPipeline=$false)] [ALIAS("ObjectCollection","Collection")][PSObject[]]$Groups,
+        [Parameter(Position=2,Mandatory=$false)] [String]$Delimiter = '---> ',
+        [ALIAS("ShowDepthCount")][Switch]$ShowDepth
+    )
+    PROCESS {
+        ForEach ($innerGroup in $group) {
+            $dn = $innerGroup.DistinguishedName
+            $name = $GroupNameHash[$innerGroup.DistinguishedName]
+            $depth = $innerGroup.Depth
+
+            # Get sub-groups of innerGroup
+            [ARRAY]$subGroups = $Groups | Where-Object {$_.Parent -like $dn} |
+                Where-Object {$_.Depth -eq $($innerGroup.Depth + 1)} |
+                Sort-Object DistinguishedName
+
+            If ($subGroups.Count -eq 1) {
+                $txtColor = "Yellow"
+                $append = " ($($subGroups.Count) sub-group)"
+            }
+            ElseIf ($subGroups.Count -gt 1) {
+                $txtColor = "Yellow"
+                $append = " ($($subGroups.Count) sub-groups)"
+            }
+            Else {
+                $txtColor = "Cyan"
+                $append = ""
+            }
+
+            If ($depth -lt 1) {
+                Write-Host "Direct Group:`t" -NoNewline
+                Write-Host "'$Name'" -ForegroundColor Black -BackgroundColor $txtColor -NoNewline
+                Write-Host $append
+            }
+            Else {
+                If ($ShowDepth -eq $true) { Write-Host "$(("[D:$($depth.ToString("00"))]").PadLeft(13))`t" -NoNewline }
+                Else { Write-Host "`t`t " -NoNewline}
+                Write-Host "$($Delimiter * $depth) " -NoNewline
+                Write-Host $Name -ForegroundColor $txtColor -NoNewline
+                Write-Host $append
+            }
+
+            Start-Sleep -Milliseconds 200
+
+            If ($subGroups.Count -gt 0) {
+                Write-GroupName -Name $SubGroups -Groups $Groups -ShowDepth:$ShowDepth
+            }
+        }
+    }
+}
+#endregion
