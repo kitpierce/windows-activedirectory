@@ -257,8 +257,6 @@ function Write-GroupName {
                 Write-Host $append
             }
 
-            Start-Sleep -Milliseconds 200
-
             If ($subGroups.Count -gt 0) {
                 Write-GroupName -Name $SubGroups -Groups $Groups -ShowDepth:$ShowDepth
             }
